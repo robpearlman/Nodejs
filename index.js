@@ -1,5 +1,5 @@
 const express = require("express");
-const { accessSheet } = require("./services/sheetsService");
+const { accessSheet, updateVote } = require("./services/sheetsService");
 const app = express();
 const path = require("path");
 
@@ -31,8 +31,13 @@ app.get("/api/test-sheets", async (req, res) => {
 app.post('/api/vote', async (req, res) => {
   const { itemId, userRole } = req.body;
   console.log(`Received vote for item ${itemId} from user role ${userRole}`);
-  // Placeholder for future logic to update Google Sheets
-  res.status(200).send("Vote received");
+  try {
+    await updateVote(itemId, userRole);
+    res.status(200).json({ message: "Vote successfully updated" });
+  } catch (error) {
+    console.error("Failed to update vote:", error);
+    res.status(500).send("Failed to update vote");
+  }
 });
 
 // The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.

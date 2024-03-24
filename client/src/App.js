@@ -1,43 +1,72 @@
 import React, { useEffect, useState } from "react";
 import BrainstormItem from "./components/BrainstormItem";
 import GroupingContainer from "./components/GroupingContainer";
+import RoleSelectionModal from "./components/RoleSelectionModal";
+import NavBar from './components/NavBar';
+
 import "./App.css";
 
 function App() {
   const [data, setData] = useState([]);
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
+  const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || null);
+   const [remainingVotes, setRemainingVotes] = useState(5); // Starts with 5 votes
+  const HARD_CODED_ACCESS_CODE = "MDOK";
+  
+  // Define fetchData outside useEffect
+  const fetchData = async () => {
+    try {
+      const response = await fetch("/api/data");
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const jsonData = await response.json();
+      setData(jsonData);
+    } catch (error) {
+      console.error("Failed to fetch or parse data:", error);
+    }
+  };
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const response = await fetch("/api/data");
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const jsonData = await response.json(); // Directly expecting JSON
-        setData(jsonData);
-      } catch (error) {
-        console.error("Failed to fetch or parse data:", error);
-      }
+    // No need to declare userRole again since it's already in state
+    if (!userRole) { // Use the state directly
+      setRoleModalOpen(true);
     }
     fetchData();
-  }, []);
+  }, [userRole]); // Depend on userRole to re-evaluate this effect when it changes
 
-  // LocalStorage functions for userRole
-  const setUserRole = (role) => {
-    localStorage.setItem("userRole", role);
+  const handleRoleSelected = (accessCode, userRole) => {
+    // Check if the entered access code matches the hard-coded one
+    if (accessCode === HARD_CODED_ACCESS_CODE) {
+      console.log(`UserRole: ${userRole} set with correct access code.`);
+      localStorage.setItem('userRole', userRole); // Persist the role
+      setUserRole(userRole); // Update state
+      setRoleModalOpen(false); // Close the modal upon successful validation
+    } else {
+      // If the codes do not match, inform the user.
+      alert("Incorrect access code. Please try again.");
+      // Optionally, you might want to keep the modal open or clear the input for another attempt.
+    }
   };
 
-  const getUserRole = () => {
-    return localStorage.getItem("userRole") || "defaultRole";
+  const handleRoleChange = () => {
+    setRoleModalOpen(true);
   };
+
 
   const handleVote = async (itemId) => {
-    const userRole = getUserRole();
+    if (remainingVotes <= 0) {
+      alert("You have used all your votes.");
+      return; // Exit the function early if no votes are remaining
+    }
+    // Directly use `userRole` from state instead of calling getUserRole()
     console.log(`User with role ${userRole} voted for item ${itemId}`);
+
     try {
       const response = await fetch("/api/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // `userRole` is used directly from state here
         body: JSON.stringify({ itemId, userRole }),
       });
 
@@ -47,7 +76,9 @@ function App() {
 
       const result = await response.json();
       console.log(result.message);
-      // Update state or UI here as needed
+      // Assuming you might want to decrement the remaining votes
+      setRemainingVotes(prev => prev - 1);
+      fetchData(); // Reload data to reflect any changes
     } catch (error) {
       console.error("Error handling vote:", error.message);
     }
@@ -70,33 +101,45 @@ function App() {
     { grouped: {}, ungrouped: [] },
   );
 
-  return (
-    <div className="app">
-      {Object.entries(grouped).map(([groupName, items], index) => (
-        <GroupingContainer key={index} groupName={groupName}>
-          {items.map((item, itemIndex) => (
-            <BrainstormItem
-              key={itemIndex}
-              id={item.id}
-              role={item.role}
-              comment={item.comment}
-              votes={item.votes}
-              onVote={handleVote}
-            />
-          ))}
-        </GroupingContainer>
-      ))}
-      {ungrouped.map((item, index) => (
-        <BrainstormItem
-          key={`ungrouped-${index}`}
-          id={item.id}
-          role={item.role}
-          comment={item.comment}
-          votes={item.votes}
-          onVote={handleVote}
-        />
-      ))}
-    </div>
+return (
+    <>
+      <NavBar
+        onRoleChange={handleRoleChange}
+        remainingVotes={remainingVotes}
+        userRole={userRole}
+      />
+      <RoleSelectionModal
+        open={roleModalOpen}
+        onClose={() => setRoleModalOpen(false)}
+        onRoleSelected={handleRoleSelected}
+      />
+      <div className="app">
+        {Object.entries(grouped).map(([groupName, items], index) => (
+          <GroupingContainer key={index} groupName={groupName}>
+            {items.map((item, itemIndex) => (
+              <BrainstormItem
+                key={itemIndex}
+                id={item.id}
+                role={item.role}
+                comment={item.comment}
+                votes={item.votes}
+                onVote={handleVote}
+              />
+            ))}
+          </GroupingContainer>
+        ))}
+        {ungrouped.map((item, index) => (
+          <BrainstormItem
+            key={`ungrouped-${index}`}
+            id={item.id}
+            role={item.role}
+            comment={item.comment}
+            votes={item.votes}
+            onVote={handleVote}
+          />
+        ))}
+      </div>
+    </>
   );
 }
 
