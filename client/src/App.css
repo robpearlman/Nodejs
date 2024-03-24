@@ -1,0 +1,6 @@
+.app {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Adjusted min-width to match GroupingContainer */
+  grid-gap: 20px;
+  padding: 20px;
+}
