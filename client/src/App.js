@@ -2,17 +2,27 @@ import React, { useEffect, useState } from "react";
 import BrainstormItem from "./components/BrainstormItem";
 import GroupingContainer from "./components/GroupingContainer";
 import RoleSelectionModal from "./components/RoleSelectionModal";
-import NavBar from './components/NavBar';
+import NavBar from "./components/NavBar";
 
 import "./App.css";
 
 function App() {
   const [data, setData] = useState([]);
   const [roleModalOpen, setRoleModalOpen] = useState(false);
-  const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || null);
-   const [remainingVotes, setRemainingVotes] = useState(5); // Starts with 5 votes
+  const [userRole, setUserRole] = useState(
+    localStorage.getItem("userRole") || null,
+  );
+  const [remainingVotes, setRemainingVotes] = useState(5); // Starts with 5 votes
   const HARD_CODED_ACCESS_CODE = "MDOK";
-  
+
+  const legendItems = [
+    { id: "legend-1", role: 1, comment: "Intern/RMO", votes: "" },
+    { id: "legend-2", role: 2, comment: "Registrar/SRMO", votes: "" },
+    { id: "legend-3", role: 3, comment: "Consultant", votes: "" },
+    { id: "legend-4", role: 4, comment: "Nursing/AH", votes: "" },
+    { id: "legend-5", role: 5, comment: "Admin/Non-clinical", votes: "" },
+  ];
+
   // Define fetchData outside useEffect
   const fetchData = async () => {
     try {
@@ -29,7 +39,8 @@ function App() {
 
   useEffect(() => {
     // No need to declare userRole again since it's already in state
-    if (!userRole) { // Use the state directly
+    if (!userRole) {
+      // Use the state directly
       setRoleModalOpen(true);
     }
     fetchData();
@@ -39,7 +50,7 @@ function App() {
     // Check if the entered access code matches the hard-coded one
     if (accessCode === HARD_CODED_ACCESS_CODE) {
       console.log(`UserRole: ${userRole} set with correct access code.`);
-      localStorage.setItem('userRole', userRole); // Persist the role
+      localStorage.setItem("userRole", userRole); // Persist the role
       setUserRole(userRole); // Update state
       setRoleModalOpen(false); // Close the modal upon successful validation
     } else {
@@ -52,7 +63,6 @@ function App() {
   const handleRoleChange = () => {
     setRoleModalOpen(true);
   };
-
 
   const handleVote = async (itemId) => {
     if (remainingVotes <= 0) {
@@ -77,7 +87,7 @@ function App() {
       const result = await response.json();
       console.log(result.message);
       // Assuming you might want to decrement the remaining votes
-      setRemainingVotes(prev => prev - 1);
+      setRemainingVotes((prev) => prev - 1);
       fetchData(); // Reload data to reflect any changes
     } catch (error) {
       console.error("Error handling vote:", error.message);
@@ -101,7 +111,7 @@ function App() {
     { grouped: {}, ungrouped: [] },
   );
 
-return (
+  return (
     <>
       <NavBar
         onRoleChange={handleRoleChange}
@@ -113,6 +123,18 @@ return (
         onClose={() => setRoleModalOpen(false)}
         onRoleSelected={handleRoleSelected}
       />
+      <div
+        style={{ display: "flex", justifyContent: "center", margin: "20px 0" }}
+      >
+        {legendItems.map((item) => (
+          <BrainstormItem
+            key={item.id}
+            role={item.role}
+            comment={item.comment}
+            isLegend={true}
+          />
+        ))}
+      </div>
       <div className="app">
         {Object.entries(grouped).map(([groupName, items], index) => (
           <GroupingContainer key={index} groupName={groupName}>

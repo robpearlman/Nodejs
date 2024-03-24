@@ -4,6 +4,15 @@ import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
 import Logo from './logo.png'; // Adjust the path to your logo
 
 function NavBar({ onRoleChange, remainingVotes, userRole }) {
+
+  const rolesMapping = {
+    1: 'Intern/RMO',
+    2: 'Registrar/SRMO',
+    3: 'Consultant',
+    4: 'Nursing/AH',
+    5: 'Admin/Non-clinical',
+  };
+  
   return (
     <AppBar position="static">
       <Toolbar>
@@ -17,7 +26,7 @@ function NavBar({ onRoleChange, remainingVotes, userRole }) {
           Remaining Votes: {remainingVotes}
         </Typography>
         <Button color="inherit" onClick={onRoleChange}>
-          Role: {userRole || "Select Role"}
+          Role: {rolesMapping[userRole] || "Select Role"}
         </Button>
       </Toolbar>
     </AppBar>
